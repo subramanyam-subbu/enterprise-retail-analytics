@@ -1,0 +1,11 @@
+CREATE INDEX idx_inventory_transaction_inventory
+ON inventory_transactions(inventory_id);
+
+CREATE INDEX idx_inventory_transaction_type
+ON inventory_transactions(transaction_type);
+
+CREATE INDEX idx_inventory_transaction_date
+ON inventory_transactions(transaction_date);
+
+CREATE INDEX idx_inventory_transaction_reference
+ON inventory_transactions(reference_id);
