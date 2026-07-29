@@ -1,5 +1,6 @@
 from generators.customer_generator import generate_customer
 from validators.customer_validator import validate_customer
+from loaders.customer_loader import load_customer
 
 
 def main():
@@ -7,22 +8,27 @@ def main():
     customer = generate_customer()
 
     print("\nGenerated Customer")
-    print("----------------------")
     print(customer)
 
     is_valid, errors = validate_customer(customer)
 
-    print("\nValidation Result")
-    print("----------------------")
-    print(f"Valid : {is_valid}")
+    if not is_valid:
 
-    if errors:
-        print("\nErrors")
+        print("\nValidation Failed")
 
         for error in errors:
-            print(f"- {error}")
+            print(error)
+
+        return
+
+    print("\nValidation Passed")
+
+    inserted = load_customer(customer)
+
+    if inserted:
+        print("ETL Completed Successfully")
     else:
-        print("No validation errors.")
+        print("ETL Failed")
 
 
 if __name__ == "__main__":
