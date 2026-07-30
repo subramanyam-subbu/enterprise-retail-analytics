@@ -55,7 +55,7 @@ def generate_product(category_id=None, brand_id=None):
         ).upper(),
         "category_id": category_id or random.randint(1, 10),
         "brand_id": brand_id or random.randint(1, 15),
-        "supplier_id": random.randint(1, 20),
+        "supplier_id": random.randint(1, 10),
         "unit_price": unit_price,
         "cost_price": cost_price,
         "stock_quantity": random.randint(0, 500),
