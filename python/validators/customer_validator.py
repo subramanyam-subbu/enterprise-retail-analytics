@@ -4,7 +4,9 @@ customer_validator.py
 Validates customer records before loading them into MySQL.
 """
 
+import re
 from typing import Dict, List, Tuple
+
 
 VALID_GENDERS = ["Male", "Female", "Other"]
 VALID_COUNTRY = "India"
@@ -14,36 +16,40 @@ def validate_customer(customer: Dict) -> Tuple[bool, List[str]]:
     """
     Validate a single customer record.
 
-    Parameters:
-        customer (dict): Customer record
-
     Returns:
-        tuple:
-            (True, []) if valid
-            (False, [errors]) if invalid
+        (True, []) if valid
+        (False, errors) if invalid
     """
 
     errors = []
 
-    # First Name
-    if not customer.get("first_name"):
+    # First name
+    first_name = customer.get("first_name")
+
+    if not first_name or not str(first_name).strip():
         errors.append("First name is required.")
 
-    # Last Name
-    if not customer.get("last_name"):
+    # Last name
+    last_name = customer.get("last_name")
+
+    if not last_name or not str(last_name).strip():
         errors.append("Last name is required.")
 
     # Email
-    email = customer.get("email", "")
+    email = str(customer.get("email", "")).strip()
 
-    if "@" not in email:
+    email_pattern = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
+
+    if not re.match(email_pattern, email):
         errors.append("Invalid email address.")
 
-    # Phone Number
+    # Phone
     phone = str(customer.get("phone_number", ""))
 
     if not phone.isdigit() or len(phone) != 10:
-        errors.append("Phone number must contain exactly 10 digits.")
+        errors.append(
+            "Phone number must contain exactly 10 digits."
+        )
 
     # Gender
     gender = customer.get("gender")
