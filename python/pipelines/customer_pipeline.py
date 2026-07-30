@@ -1,47 +1,70 @@
 """
 customer_pipeline.py
 
-Controls the customer ETL workflow:
+Customer ETL pipeline:
 Generate → Validate → Load
 """
 
 from generators.customer_generator import generate_customer
 from validators.customer_validator import validate_customer
-from loaders.customer_loader import load_customer
+from loaders.customer_loader import load_customers
 
 
-def run_customer_pipeline():
+def run_customer_pipeline(batch_size: int = 100):
     """
-    Execute the customer ETL pipeline for one customer.
+    Generate, validate and load customers in batches.
+
+    Parameters:
+        batch_size: Number of customers generated per batch.
     """
 
-    # Step 1: Generate customer
-    customer = generate_customer()
+    print("\n====================================")
+    print("CUSTOMER ETL PIPELINE")
+    print("====================================")
 
-    print("\nGenerated Customer")
-    print("----------------------")
-    print(customer)
+    customers = []
+    rejected_customers = []
 
-    # Step 2: Validate customer
-    is_valid, errors = validate_customer(customer)
+    # Generate customers
+    for _ in range(batch_size):
 
-    if not is_valid:
+        customer = generate_customer()
 
-        print("\n❌ Validation Failed")
+        is_valid, errors = validate_customer(customer)
 
-        for error in errors:
-            print(f"- {error}")
+        if is_valid:
+            customers.append(customer)
+        else:
+            rejected_customers.append(
+                {
+                    "customer": customer,
+                    "errors": errors
+                }
+            )
 
-        return False
+    print(f"\nGenerated Customers : {batch_size}")
+    print(f"Valid Customers     : {len(customers)}")
+    print(f"Rejected Customers  : {len(rejected_customers)}")
 
-    print("\n✅ Validation Passed")
+    # Load valid customers
+    if customers:
 
-    # Step 3: Load customer
-    inserted = load_customer(customer)
+        success = load_customers(customers)
 
-    if inserted:
-        print("\n✅ Customer ETL Completed Successfully")
-        return True
+        if success:
+            print("\n✅ Customer batch loaded successfully.")
+        else:
+            print("\n❌ Customer batch loading failed.")
 
-    print("\n❌ Customer ETL Failed")
-    return False
+    else:
+        print("\n❌ No valid customers available for loading.")
+
+    # Rejected records
+    if rejected_customers:
+
+        print("\nRejected Customer Details:")
+
+        for rejected in rejected_customers:
+            print(
+                rejected["errors"]
+            )

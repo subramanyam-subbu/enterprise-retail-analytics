@@ -1,11 +1,12 @@
 from generators.customer_generator import generate_customer
 from validators.customer_validator import validate_customer
-from loaders.customer_loader import load_customer
+from loaders.customer_loader import load_customers
 from pipelines.customer_pipeline import run_customer_pipeline
 
 
+
 def main():
-    run_customer_pipeline()
+    run_customer_pipeline(batch_size = 100)
 
 
 if __name__ == "__main__":
