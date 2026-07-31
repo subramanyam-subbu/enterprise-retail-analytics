@@ -1,4 +1,5 @@
 import random
+import uuid
 from datetime import datetime, timedelta
 
 
@@ -29,17 +30,17 @@ def generate_order(customer_id):
         days=random.randint(0, 365)
     )
 
-    subtotal_amount = round(
+    subtotal = round(
         random.uniform(500, 50000),
         2
     )
 
     discount_amount = round(
-        subtotal_amount * random.uniform(0, 0.20),
+        subtotal * random.uniform(0, 0.20),
         2
     )
 
-    taxable_amount = subtotal_amount - discount_amount
+    taxable_amount = subtotal - discount_amount
 
     tax_amount = round(
         taxable_amount * random.uniform(0.05, 0.18),
@@ -83,11 +84,12 @@ def generate_order(customer_id):
         )[0]
 
     order = {
+        "order_number": f"ORD-{datetime.now().strftime('%Y%m%d%H%M%S%f')}-{uuid.uuid4().hex[:6].upper()}",
         "customer_id": customer_id,
         "order_date": order_date,
         "order_status": order_status,
         "payment_status": payment_status,
-        "subtotal_amount": subtotal_amount,
+        "subtotal": subtotal,
         "discount_amount": discount_amount,
         "tax_amount": tax_amount,
         "shipping_charges": shipping_charges,
