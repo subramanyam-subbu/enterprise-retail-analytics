@@ -1,16 +1,17 @@
+from datetime import timedelta
+
+from python.database import get_connection
 from python.generators.shipment_tracking_generator import (
-    generate_tracking_event
+    generate_tracking_event,
 )
 from python.loaders.shipment_tracking_loader import (
-    load_tracking_event
+    load_tracking_event,
 )
-from python.database import get_connection
-from datetime import timedelta
 
 
 def get_shipments():
     """
-    Fetch existing shipments with their delivery information.
+    Fetch shipments from database.
     """
 
     connection = get_connection()
@@ -34,113 +35,89 @@ def get_shipments():
         connection.close()
 
 
-def run_shipment_tracking_pipeline():
+def build_tracking_events(
+    shipment_status,
+    shipped_date,
+    actual_delivery_date
+):
+    """
+    Build tracking timeline for a shipment.
+    """
 
-    print("Fetching existing shipments...")
+    if shipped_date is None:
+        return []
+
+    events = []
+
+    # Every shipped order gets these events
+    events.append(("Shipment Created", shipped_date))
+    events.append(("Picked Up", shipped_date + timedelta(hours=6)))
+    events.append(("In Transit", shipped_date + timedelta(days=1)))
+    events.append(("Arrived At Hub", shipped_date + timedelta(days=2)))
+
+    if shipment_status == "Delivered":
+
+        events.append((
+            "Out For Delivery",
+            shipped_date + timedelta(days=3)
+        ))
+
+        delivery_time = (
+            actual_delivery_date
+            if actual_delivery_date
+            else shipped_date + timedelta(days=4)
+        )
+
+        events.append(("Delivered", delivery_time))
+
+    elif shipment_status == "Out For Delivery":
+
+        events.append((
+            "Out For Delivery",
+            shipped_date + timedelta(days=3)
+        ))
+
+    elif shipment_status == "Returned":
+
+        events.append((
+            "Returned",
+            shipped_date + timedelta(days=3)
+        ))
+
+    elif shipment_status == "Failed":
+
+        events.append((
+            "Delivery Failed",
+            shipped_date + timedelta(days=3)
+        ))
+
+    return events
+
+
+def run_pipeline():
+
+    print("=" * 60)
+    print("Shipment Tracking Pipeline Started")
+    print("=" * 60)
 
     shipments = get_shipments()
 
-    if not shipments:
-        raise Exception("No shipments found in database.")
+    print(f"Shipments Found : {len(shipments)}")
 
-    print(f"Found {len(shipments)} shipments.")
+    total_loaded = 0
 
-    loaded_count = 0
+    for shipment in shipments:
 
-    for (
-        shipment_id,
-        shipment_status,
-        shipped_date,
-        actual_delivery_date
-    ) in shipments:
+        shipment_id = shipment[0]
+        shipment_status = shipment[1]
+        shipped_date = shipment[2]
+        actual_delivery_date = shipment[3]
 
-        # Shipment Created
-        base_time = shipped_date
-
-        if base_time is None:
-            continue
-
-        events = []
-
-        events.append(
-            (
-                "Shipment Created",
-                base_time
-            )
+        events = build_tracking_events(
+            shipment_status,
+            shipped_date,
+            actual_delivery_date
         )
-
-        # Picked Up
-        events.append(
-            (
-                "Picked Up",
-                base_time + timedelta(hours=6)
-            )
-        )
-
-        # In Transit
-        events.append(
-            (
-                "In Transit",
-                base_time + timedelta(days=1)
-            )
-        )
-
-        # Arrived At Hub
-        events.append(
-            (
-                "Arrived At Hub",
-                base_time + timedelta(days=2)
-            )
-        )
-
-        # Out For Delivery
-        if shipment_status in [
-            "Out For Delivery",
-            "Delivered"
-        ]:
-
-            events.append(
-                (
-                    "Out For Delivery",
-                    base_time + timedelta(days=3)
-                )
-            )
-
-        # Delivered
-        if shipment_status == "Delivered":
-
-            delivery_time = (
-                actual_delivery_date
-                if actual_delivery_date
-                else base_time + timedelta(days=4)
-            )
-
-            events.append(
-                (
-                    "Delivered",
-                    delivery_time
-                )
-            )
-
-        # Failed
-        elif shipment_status == "Failed":
-
-            events.append(
-                (
-                    "Delivery Failed",
-                    base_time + timedelta(days=3)
-                )
-            )
-
-        # Returned
-        elif shipment_status == "Returned":
-
-            events.append(
-                (
-                    "Returned",
-                    base_time + timedelta(days=4)
-                )
-            )
 
         for tracking_status, event_time in events:
 
@@ -152,12 +129,18 @@ def run_shipment_tracking_pipeline():
 
             load_tracking_event(tracking_event)
 
-            loaded_count += 1
+            total_loaded += 1
 
-    print(
-        f"Successfully loaded {loaded_count} tracking events."
-    )
+            if total_loaded % 500 == 0:
+                print(
+                    f"{total_loaded} tracking events loaded..."
+                )
+
+    print("=" * 60)
+    print(f"Pipeline Completed Successfully")
+    print(f"Total Tracking Events : {total_loaded}")
+    print("=" * 60)
 
 
 if __name__ == "__main__":
-    run_shipment_tracking_pipeline()
+    run_pipeline()

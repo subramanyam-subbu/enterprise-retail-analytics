@@ -3,7 +3,7 @@ from python.database import get_connection
 
 def load_tracking_event(tracking_event):
     """
-    Insert one shipment tracking event.
+    Insert one shipment tracking event into the shipment_tracking table.
     """
 
     connection = get_connection()
@@ -34,11 +34,9 @@ def load_tracking_event(tracking_event):
         cursor.execute(insert_query, values)
         connection.commit()
 
-        print("Tracking event loaded successfully.")
-
     except Exception as e:
         connection.rollback()
-        print("Error while loading tracking event:", e)
+        print(f"Error loading tracking event: {e}")
         raise
 
     finally:
